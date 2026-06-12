@@ -47,6 +47,11 @@ def run_worker():
                 logger.info("Executando Planejador de Acquire via LLM...")
                 run_acquire_agent(session_id)
                 
+            elif task_type.startswith("ACQUIRE_REPROCESS:"):
+                req_id = task_type.split(":")[1]
+                logger.info(f"Re-processando Requisito {req_id}...")
+                run_acquire_agent(session_id, target_req_id=req_id)
+                
             elif task_type == "FILL_GENERATION":
                 logger.info("Executando Geração de Parecer (Simulando 5s de IA)...")
                 time.sleep(5)

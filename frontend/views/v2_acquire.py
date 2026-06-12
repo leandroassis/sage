@@ -68,35 +68,41 @@ def render_acquire():
         with st.expander(f"{icon} {req['id']} - Status: {req['status']}", expanded=(req['status'] != "Pronto")):
             st.write(f"**Instrução do Agente:** {req.get('instruction', '')}")
             
-            if req.get('synthesis'):
-                st.info(f"🧠 **Síntese do Modelo:** {req['synthesis']}")
+            ensaios = req.get('ensaios', [])
+            for ensaio in ensaios:
+                st.info(f"🧠 **[{ensaio.get('id', 'Ensaio')}] Síntese:** {ensaio.get('synthesis', '')}")
             
-            user_prompt = st.text_area("Prompt Adicional / Feedback (Opcional)", value=req.get('user_prompt', ''), key=f"prompt_{req['id']}", placeholder="Sugerir alteração ou forçar uma interpretação...")
+            user_prompt = st.text_area("Prompt Adicional / Feedback (Opcional)", value=req.get('user_prompt', ''), key=f"prompt_{req['id']}", placeholder="Sugerir alteração ou forçar uma interpretação para reavaliar...")
             
             uploaded_file = st.file_uploader(f"Anexar Evidência Complementar (Opcional para Autônomos)", key=f"up_{req['id']}")
             
-            if st.button("Salvar e Marcar como Pronto", key=f"btn_{req['id']}"):
-                if uploaded_file is not None:
-                    project_dir = os.path.join(DATA_DIR, "projects", project_id)
-                    evidencias_dir = os.path.join(project_dir, "requisitos", req['id'], "evidencias")
-                    os.makedirs(evidencias_dir, exist_ok=True)
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Salvar e Marcar como Pronto", key=f"btn_pronto_{req['id']}"):
+                    if uploaded_file is not None:
+                        project_dir = os.path.join(DATA_DIR, "projects", project_id)
+                        evidencias_dir = os.path.join(project_dir, "requisitos", req['id'], "evidencias")
+                        os.makedirs(evidencias_dir, exist_ok=True)
+                        file_path = os.path.join(evidencias_dir, uploaded_file.name)
+                        with open(file_path, "wb") as f:
+                            f.write(uploaded_file.getbuffer())
+                        if 'evidencias' not in req:
+                            req['evidencias'] = []
+                        req['evidencias'].append(file_path)
                     
-                    file_path = os.path.join(evidencias_dir, uploaded_file.name)
-                    with open(file_path, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
-                        
-                    if 'evidencias' not in req:
-                        req['evidencias'] = []
-                    req['evidencias'].append(file_path)
-                
-                req['user_prompt'] = user_prompt
-                req['status'] = "Pronto"
-                
-                # Salva o estado atualizado no DB
-                update_session_state(project_id, "v2_acquire", db_state)
-                st.success("Salvo com sucesso!")
-                time.sleep(1)
-                st.rerun()
+                    req['user_prompt'] = user_prompt
+                    req['status'] = "Pronto"
+                    update_session_state(project_id, "v2_acquire", db_state)
+                    st.success("Marcado como Pronto!")
+                    time.sleep(1)
+                    st.rerun()
+                    
+            with col2:
+                if st.button("Gerar Nova Resposta (Aplicar Prompt)", key=f"btn_reprocess_{req['id']}"):
+                    req['user_prompt'] = user_prompt
+                    update_session_state(project_id, "v2_acquire", db_state)
+                    enqueue_job(project_id, f"ACQUIRE_REPROCESS:{req['id']}")
+                    st.rerun()
 
     if all_ready:
         st.success("Todos os requisitos estão prontos para a Geração do Parecer!")
