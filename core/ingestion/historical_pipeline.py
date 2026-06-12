@@ -33,7 +33,8 @@ def run_historical_pipeline(historical_dir: str, db_dir: str, add_log_callback=N
         model="nomic-embed-text",
         model_kwargs={
             "num_gpu": 19,
-            "num_ctx": 4096
+            "num_ctx": 4096,
+            "keep_alive": 0
         }
     )
     
@@ -61,19 +62,18 @@ def run_historical_pipeline(historical_dir: str, db_dir: str, add_log_callback=N
             env = os.environ.copy()
             env["CUDA_VISIBLE_DEVICES"] = ""
             
-            # Força o PyTorch a usar o máximo de threads disponíveis na CPU
             import multiprocessing
-            
-            cpu_cores = str(multiprocessing.cpu_count()-2)
+            cpu_cores = str(multiprocessing.cpu_count())
             env["OMP_NUM_THREADS"] = cpu_cores
             env["MKL_NUM_THREADS"] = cpu_cores
             env["OPENBLAS_NUM_THREADS"] = cpu_cores
             env["VECLIB_MAXIMUM_THREADS"] = cpu_cores
             env["NUMEXPR_NUM_THREADS"] = cpu_cores
             
+            log("[Marker] O progresso da extração (tqdm) aparecerá abaixo no terminal...")
             subprocess.run(
                 ["marker_single", pdf_path, "--output_dir", out_dir],
-                check=True, capture_output=True, text=True, env=env
+                check=True, env=env
             )
         except Exception as e:
             log(f"[Marker] Erro ao converter {pdf_file}. Verifique a instalação do marker-pdf. Erro: {e}")

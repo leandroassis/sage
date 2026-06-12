@@ -5,8 +5,8 @@ from langchain_community.embeddings import OllamaEmbeddings
 
 def main():
     # Caminhos para os dados
-    historical_dir = os.path.join(os.getcwd(), "data", "historical_reports")
-    db_dir = os.path.join(os.getcwd(), "data", "vector_db")
+    historical_dir = os.path.join(os.getcwd(), 'frontend', "data", "historical_reports")
+    db_dir = os.path.join(os.getcwd(), 'frontend', "data", "vector_db")
     
     os.makedirs(historical_dir, exist_ok=True)
     os.makedirs(db_dir, exist_ok=True)
@@ -15,7 +15,7 @@ def main():
     pdfs = [f for f in os.listdir(historical_dir) if f.lower().endswith('.pdf')]
     if not pdfs:
         print("===============================================================")
-        print("Nenhum PDF encontrado na pasta: data/historical_reports")
+        print("Nenhum PDF encontrado na pasta: frontend/data/historical_reports")
         print("Por favor, adicione pelo menos um PDF de teste lá e rode novamente.")
         print("===============================================================")
         return
@@ -39,8 +39,9 @@ def main():
     embeddings = OllamaEmbeddings(
         model="nomic-embed-text",
         model_kwargs={
-            "num_gpu": 19,
-            "num_ctx": 4096
+            "num_gpu": 18,
+            "num_ctx": 4096,
+            "keep_alive": 0
         }
     )
     
