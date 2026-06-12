@@ -1,0 +1,6 @@
+streamlit==1.58.0
+langchain-community
+langchain-text-splitters
+chromadb
+ollama
+marker-pdf
