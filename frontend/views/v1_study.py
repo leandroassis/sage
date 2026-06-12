@@ -15,8 +15,8 @@ def render_study():
     if st.button("Iniciar Pipeline de Inteligência Artificial"):
         with st.spinner("Processando RAG Multimodal..."):
             # Acionamento do pipeline real do Histórico
-            historical_dir = os.path.join(os.getcwd(), "sage", "data", "historical_reports")
-            db_dir = os.path.join(os.getcwd(), "sage", "data", "vector_db")
+            historical_dir = os.path.join(os.getcwd(), "data", "historical_reports")
+            db_dir = os.path.join(os.getcwd(), "data", "vector_db")
             
             if len(historical) > 0 and os.path.exists(historical_dir):
                 st.session_state.logs.append("[Study] Iniciando o processamento do acervo histórico...")

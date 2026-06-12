@@ -27,7 +27,7 @@ def render_setup():
                 st.session_state.logs.append(f"[Pre-Study] Recebidos {len(hist_docs)} PDFs via upload direto.")
                 
                 # Salvando fisicamente na pasta de histórico
-                hist_dir = os.path.join(os.getcwd(), "sage", "data", "historical_reports")
+                hist_dir = os.path.join(os.getcwd(), "data", "historical_reports")
                 os.makedirs(hist_dir, exist_ok=True)
                 for doc in hist_docs:
                     file_path = os.path.join(hist_dir, doc.name)
@@ -58,7 +58,7 @@ def render_setup():
                     with open(temp_path, "wb") as f:
                         f.write(uploaded_file.getbuffer())
                     
-                    project_dir = os.path.join(os.getcwd(), "sage", "data", "current_project")
+                    project_dir = os.path.join(os.getcwd(), "data", "current_project")
                     
                     # Executa script real
                     run_pre_study(temp_path, project_dir)
@@ -91,7 +91,7 @@ def render_setup():
                 st.success("Arquivos/Pasta prontos para processamento.")
                 if st.button("Finalizar Pre-Study e Iniciar Study"):
                     # Salva os arquivos upados fisicamente no projeto
-                    project_docs_dir = os.path.join(os.getcwd(), "sage", "data", "current_project", "documentacao")
+                    project_docs_dir = os.path.join(os.getcwd(), "data", "current_project", "documentacao")
                     os.makedirs(project_docs_dir, exist_ok=True)
                     
                     saved_names = []

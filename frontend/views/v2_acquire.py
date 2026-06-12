@@ -50,7 +50,7 @@ def render_acquire():
                 if uploaded_file is not None or st.button("Salvar Prompt e Avançar", key=f"btn_{req['id']}"):
                     # Salvar arquivo se existir
                     if uploaded_file is not None:
-                        project_dir = os.path.join(os.getcwd(), "sage", "data", "current_project")
+                        project_dir = os.path.join(os.getcwd(), "data", "current_project")
                         evidencias_dir = os.path.join(project_dir, "requisitos", req['id'], "evidencias")
                         os.makedirs(evidencias_dir, exist_ok=True)
                         
