@@ -3,3 +3,6 @@ reports
 frontend/data
 .venv
 __pycache__
+tmp*
+data
+*.log

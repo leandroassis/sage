@@ -6,7 +6,10 @@ st.set_page_config(page_title="SAGE - Gestão de Ensaios", layout="wide")
 
 # Inicialização de Variáveis de Estado
 if "current_phase" not in st.session_state:
-    st.session_state.current_phase = 0
+    st.session_state.current_phase = -1  # Começa na Home
+
+if "project_id" not in st.session_state:
+    st.session_state.project_id = None
 
 if "logs" not in st.session_state:
     st.session_state.logs = []
@@ -21,6 +24,7 @@ def add_log(msg: str):
     st.session_state.logs.append(msg)
 
 from components.dashboard import render_dashboard
+from views.v_home import render_home
 from views.v0_setup import render_setup
 from views.v1_study import render_study
 from views.v2_acquire import render_acquire
@@ -42,11 +46,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Main App Loop
-render_dashboard()
+if st.session_state.current_phase >= 0:
+    render_dashboard()
+    st.divider()
 
-st.divider()
-
-if st.session_state.current_phase == 0:
+if st.session_state.current_phase == -1:
+    render_home()
+elif st.session_state.current_phase == 0:
     render_setup()
 elif st.session_state.current_phase == 1:
     render_study()

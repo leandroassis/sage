@@ -5,12 +5,27 @@ import sys
 # Adiciona o diretório raiz ao path para poder importar o pre_study
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
 from core.ingestion.pre_study import run_pre_study
+from core.database import update_session_state
+from core.config import DATA_DIR, PROJECT_ROOT
+import json
 
 def render_setup():
     st.header("Fase 0: Setup do Projeto (Pre-Study)")
     
     if "setup_step" not in st.session_state:
         st.session_state.setup_step = 1
+
+    # Função Helper para salvar o estado no banco
+    def save_state():
+        state_data = {
+            "setup_step": st.session_state.setup_step,
+            "logs": st.session_state.logs,
+            "historical_pdfs": st.session_state.get("historical_pdfs", []),
+            "requisitos": st.session_state.get("requisitos", []),
+            "equipment_docs": st.session_state.get("equipment_docs", []),
+            "equipment_folder": st.session_state.get("equipment_folder", None)
+        }
+        update_session_state(st.session_state.project_id, "v0_setup", state_data)
 
     st.progress(st.session_state.setup_step / 3.0, text=f"Etapa {st.session_state.setup_step} de 3")
     st.divider()
@@ -27,7 +42,7 @@ def render_setup():
                 st.session_state.logs.append(f"[Pre-Study] Recebidos {len(hist_docs)} PDFs via upload direto.")
                 
                 # Salvando fisicamente na pasta de histórico
-                hist_dir = os.path.join(os.getcwd(), "data", "historical_reports")
+                hist_dir = os.path.join(DATA_DIR, "historical_reports")
                 os.makedirs(hist_dir, exist_ok=True)
                 for doc in hist_docs:
                     file_path = os.path.join(hist_dir, doc.name)
@@ -36,12 +51,14 @@ def render_setup():
                         
                 st.session_state.historical_pdfs = [d.name for d in hist_docs]
                 st.session_state.setup_step = 2
+                save_state()
                 st.rerun()
                 
         st.info("Caso não queira adicionar mais nenhum relatório histórico agora, apenas deixe em branco e clique em Avançar.")
         if st.button("Pular esta etapa"):
             st.session_state.historical_pdfs = []
             st.session_state.setup_step = 2
+            save_state()
             st.rerun()
 
     elif st.session_state.setup_step == 2:
@@ -54,11 +71,11 @@ def render_setup():
             if st.button("Processar e Fatiar Documento Base"):
                 with st.spinner("Lendo documento LaTeX e dividindo em Requisitos..."):
                     # Salva temporário
-                    temp_path = os.path.join(os.getcwd(), "temp_main.tex")
+                    temp_path = os.path.join(PROJECT_ROOT, "temp_main.tex")
                     with open(temp_path, "wb") as f:
                         f.write(uploaded_file.getbuffer())
                     
-                    project_dir = os.path.join(os.getcwd(), "data", "current_project")
+                    project_dir = os.path.join(DATA_DIR, "projects", st.session_state.project_id)
                     
                     # Executa script real
                     run_pre_study(temp_path, project_dir)
@@ -72,6 +89,7 @@ def render_setup():
                     st.session_state.logs.append("[Pre-Study] Árvore de requisitos criada com sucesso.")
                     os.remove(temp_path)
                     st.session_state.setup_step = 3
+                    save_state()
                     st.rerun()
 
     elif st.session_state.setup_step == 3:
@@ -91,7 +109,7 @@ def render_setup():
                 st.success("Arquivos/Pasta prontos para processamento.")
                 if st.button("Finalizar Pre-Study e Iniciar Study"):
                     # Salva os arquivos upados fisicamente no projeto
-                    project_docs_dir = os.path.join(os.getcwd(), "data", "current_project", "documentacao")
+                    project_docs_dir = os.path.join(DATA_DIR, "projects", st.session_state.project_id, "documentacao")
                     os.makedirs(project_docs_dir, exist_ok=True)
                     
                     saved_names = []
@@ -114,4 +132,15 @@ def render_setup():
                     st.session_state.setup_step = 1 
                     st.session_state.progress = 25
                     st.session_state.current_phase = 1
+                    
+                    # Salva como v1_study agora
+                    state_data = {
+                        "setup_step": 1,
+                        "logs": st.session_state.logs,
+                        "historical_pdfs": st.session_state.get("historical_pdfs", []),
+                        "requisitos": st.session_state.get("requisitos", []),
+                        "equipment_docs": st.session_state.get("equipment_docs", []),
+                        "equipment_folder": st.session_state.get("equipment_folder", None)
+                    }
+                    update_session_state(st.session_state.project_id, "v1_study", state_data)
                     st.rerun()

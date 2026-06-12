@@ -4,12 +4,15 @@ import shutil
 import subprocess
 # pyrefly: ignore [missing-import]
 from langchain_text_splitters import MarkdownHeaderTextSplitter
+# pyrefly: ignore [missing-import]
 from langchain_community.vectorstores import Chroma
+# pyrefly: ignore [missing-import]
 from langchain_community.embeddings import OllamaEmbeddings
 from .hash_tracker import HashTracker
 from .vlm_processor import describe_image
+from core.config import PROJECT_ROOT
 
-def run_historical_pipeline(historical_dir: str, db_dir: str, add_log_callback=None):
+def run_historical_pipeline(reports_dir: str, db_dir: str, add_log_callback=None):
     """
     Orquestra a ingestão de PDFs históricos:
     1. Calcula MD5 e verifica duplicidade.
@@ -38,13 +41,13 @@ def run_historical_pipeline(historical_dir: str, db_dir: str, add_log_callback=N
         }
     )
     
-    pdfs = [f for f in os.listdir(historical_dir) if f.lower().endswith('.pdf')]
+    pdfs = [f for f in os.listdir(reports_dir) if f.lower().endswith('.pdf')]
     if not pdfs:
         log("[Study - Histórico] Nenhum PDF histórico encontrado.")
         return
 
     for pdf_file in pdfs:
-        pdf_path = os.path.join(historical_dir, pdf_file)
+        pdf_path = os.path.join(reports_dir, pdf_file)
         
         if tracker.is_processed(pdf_path):
             log(f"[Study - Histórico] Ignorado (Hash já processado): {pdf_file}")
@@ -53,7 +56,7 @@ def run_historical_pipeline(historical_dir: str, db_dir: str, add_log_callback=N
         log(f"[Study - Histórico] Processando novo arquivo: {pdf_file}")
         
         # 1. Conversão com Marker
-        out_dir = os.path.join(os.getcwd(), "tmp_marker", pdf_file.replace('.pdf', ''))
+        out_dir = os.path.join(PROJECT_ROOT, "tmp_marker")
         os.makedirs(out_dir, exist_ok=True)
         
         log(f"[Marker] Convertendo {pdf_file} para Markdown...")
@@ -80,7 +83,8 @@ def run_historical_pipeline(historical_dir: str, db_dir: str, add_log_callback=N
             continue
             
         # O marker cria um .md com o mesmo nome do pdf dentro da pasta
-        md_file = os.path.join(out_dir, pdf_file.replace('.pdf', '.md'))
+        pdf_basename = pdf_file.replace('.pdf', '')
+        md_file = os.path.join(out_dir, pdf_basename, f"{pdf_basename}.md")
         if not os.path.exists(md_file):
             log(f"[Marker] Falha: Arquivo {md_file} não foi gerado.")
             continue
@@ -131,11 +135,10 @@ def run_historical_pipeline(historical_dir: str, db_dir: str, add_log_callback=N
         # 5. Finalização
         tracker.mark_as_processed(pdf_path)
         log(f"[Study - Histórico] Concluído com sucesso: {pdf_file}")
-        
-        # Limpeza do temporário
-        try:
-            shutil.rmtree(os.path.join(os.getcwd(), "tmp_marker"))
-        except:
-            pass
+            
+    try:
+        shutil.rmtree(os.path.join(PROJECT_ROOT, "tmp_marker"))
+    except Exception as e:
+        log(f"[Study - Erro Limpeza] {e}")
 
     log("[Study - Histórico] Pipeline de ingestão finalizado.")

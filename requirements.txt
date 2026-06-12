@@ -4,3 +4,6 @@ langchain-text-splitters
 chromadb
 ollama
 marker-pdf
+tree-sitter==0.21.3
+tree-sitter-languages
+langchain

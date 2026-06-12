@@ -14,14 +14,14 @@ class HashTracker:
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS historical_files (
                     filename TEXT PRIMARY KEY,
-                    md5_hash TEXT NOT NULL,
+                    sha_hash TEXT NOT NULL,
                     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
             conn.commit()
 
-    def _calculate_md5(self, file_path: str) -> str:
-        hasher = hashlib.md5()
+    def _calculate_sha256(self, file_path: str) -> str:
+        hasher = hashlib.sha256()
         with open(file_path, 'rb') as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 hasher.update(chunk)
@@ -35,12 +35,12 @@ class HashTracker:
         if not os.path.exists(file_path):
             return False
             
-        current_hash = self._calculate_md5(file_path)
+        current_hash = self._calculate_sha256(file_path)
         filename = os.path.basename(file_path)
         
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute('SELECT md5_hash FROM historical_files WHERE filename = ?', (filename,))
+            cursor.execute('SELECT sha_hash FROM historical_files WHERE filename = ?', (filename,))
             result = cursor.fetchone()
             
             if result and result[0] == current_hash:
@@ -51,13 +51,13 @@ class HashTracker:
         """
         Grava ou atualiza o registro do arquivo como processado.
         """
-        current_hash = self._calculate_md5(file_path)
+        current_hash = self._calculate_sha256(file_path)
         filename = os.path.basename(file_path)
         
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT OR REPLACE INTO historical_files (filename, md5_hash)
+                INSERT OR REPLACE INTO historical_files (filename, sha_hash)
                 VALUES (?, ?)
             ''', (filename, current_hash))
             conn.commit()
