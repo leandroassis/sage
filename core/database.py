@@ -73,8 +73,13 @@ def get_session(session_id: str):
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM sessions WHERE id = ?", (session_id,))
     row = cursor.fetchone()
-    conn.close()
     return dict(row) if row else None
+
+def get_session_state(session_id: str, stage: str = None):
+    row = get_session(session_id)
+    if not row or not row['state_data']:
+        return {}
+    return json.loads(row['state_data'])
 
 def update_session_state(session_id: str, current_stage: str, state_data: dict):
     conn = get_connection()

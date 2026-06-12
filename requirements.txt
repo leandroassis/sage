@@ -7,3 +7,4 @@ marker-pdf
 tree-sitter==0.21.3
 tree-sitter-languages
 langchain
+langchain-ollama

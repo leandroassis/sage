@@ -7,6 +7,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 from core.database import get_pending_job, update_job_status
 from core.ingestion.historical_pipeline import run_historical_pipeline
 from core.ingestion.project_pipeline import run_project_pipeline
+from core.agents.acquire_agent import run_acquire_agent
 from core.config import DATA_DIR, get_logger
 
 logger = get_logger("Worker")
@@ -43,8 +44,8 @@ def run_worker():
                 run_project_pipeline(session_id, db_dir)
                 
             elif task_type == "ACQUIRE_PLANNING":
-                logger.info("Executando Planejador de Acquire (Simulando 5s de IA)...")
-                time.sleep(5)
+                logger.info("Executando Planejador de Acquire via LLM...")
+                run_acquire_agent(session_id)
                 
             elif task_type == "FILL_GENERATION":
                 logger.info("Executando Geração de Parecer (Simulando 5s de IA)...")
@@ -58,9 +59,11 @@ def run_worker():
             
         except Exception as e:
             err_msg = str(e)
-            logger.error(f"Erro no job {job_id}: {err_msg}")
+            _jid = job_id if 'job_id' in locals() else 'N/A'
+            logger.error(f"Erro no job {_jid}: {err_msg}")
             traceback.print_exc()
-            update_job_status(job_id, "FAILED", error_message=err_msg)
+            if _jid != 'N/A':
+                update_job_status(_jid, "FAILED", error_message=err_msg)
             
         time.sleep(1)
 
