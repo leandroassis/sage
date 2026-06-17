@@ -22,7 +22,7 @@ def render_acquire():
         if status in ['PENDING', 'RUNNING']:
             st.info("🧠 Agente Planejador de IA ativo. Analisando...")
             
-            progress_data = db_state.get("progress", {})
+            progress_data = db_state.get("task_progress", {})
             curr = progress_data.get("current", 0)
             total = progress_data.get("total", 1)
             eta = progress_data.get("eta", 0)

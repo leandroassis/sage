@@ -4,7 +4,7 @@ import os
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from core.database import enqueue_job, get_session_active_job, update_session_state, get_connection
+from core.database import enqueue_job, get_session_active_job, update_session_state, get_connection, get_session_state
 
 def render_study():
     st.header("Fase 1: Motor de Ingestão e Vetorização (Study)")
@@ -56,6 +56,20 @@ def render_study():
             st.info("Sua requisição está na Fila aguardando a GPU ficar livre...")
         else:
             st.warning("Executando! O modelo de IA está processando seus documentos. Não feche o navegador...")
+            
+            db_state = get_session_state(project_id, "v1_study") or {}
+            progress_data = db_state.get("task_progress", {})
+            curr = progress_data.get("current", 0)
+            total = progress_data.get("total", 0)
+            eta = progress_data.get("eta", 0)
+            
+            if total > 0:
+                progress_pct = curr / total if total > 0 else 0.0
+                st.progress(progress_pct, text=f"Progresso Real: {curr}/{total} arquivos processados")
+                
+                if eta > 0:
+                    mins, secs = divmod(eta, 60)
+                    st.caption(f"ETA Inteligente: ~{int(mins)}m {int(secs)}s restantes")
             
         with st.spinner(f"Status atual: {status}"):
             time.sleep(3)

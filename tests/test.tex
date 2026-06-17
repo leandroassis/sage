@@ -1,0 +1,84 @@
+\subsection{REQUISITO III.1.1} 
+    
+    % --- Tabela minimalista (Design Limpo) ---
+    
+    \begin{tabularx}{\textwidth}{l X} 
+    \toprule
+    
+    \textbf{Referência Normativa} & \textbf{Requisito e Item} \\ 
+    \midrule
+    
+    \rowcolor{gray!15} % Cor de fundo
+    
+    \textbf{MCT 7 Vol. II} & 
+    "A parte interessada deve fornecer documentação específica dos componentes de hardware, software e firmware do módulo criptográfico além da fronteira criptográfica que delimita tais componentes." \\
+    \bottomrule
+    \end{tabularx}
+    % --- Fim da Tabela ---
+    
+    \vspace{1cm} 
+    
+    % --- Procedimentos (Texto Livre) ---
+    \subsubsection*{Procedimentos de ensaio para NSH 1, 2 e 3:}
+    \begin{itemize}[leftmargin=*, nosep]
+        \item \textbf{EN.III.1.1.01:} Verificar se a documentação inclui uma “lista de componentes principais” que descreve todos componentes de hardware, software e firmware do módulo criptográfico. Verificar se a “lista de componentes principais” inclui, mas não se limita aos seguintes tipos de componentes:
+        \begin{itemize}
+            \item Processadores, incluindo microprocessadores, processadores de sinal digital, processadores  personalizados/dedicados, microcontroladores, ou quaisquer outros tipos de processadores;
+            \item Circuitos integrados de memória ROM (Read Only Memory) para código executável de programas e dados [tal item pode incluir MPROM (Mask-Programmed ROM), PROM (Programmable ROM), EPROM (Erasable PROM), EEPROM (Electrically Erasable PROM) ou FLASH];
+            \item Circuitos integrados de memória RAM (Random Access Memory) para armazenamento de dados temporários;
+            \item Circuitos integrados semi dedicado (semi-custom) de aplicação específica, tais como, gate arrays, programmable logic arrays, field programmable gate arrays, ou outros dispositivos lógicos programáveis;
+            \item Circuitos integrados totalmente dedicados (fully custom) e de aplicação específica, incluindo quaisquer circuitos integrados criptográficos e dedicados;
+            \item Outros elementos ativos de circuito eletrônico (a documentação não deve listar elementos passivos de circuito eletrônico, tais como, resistores pull up/pull down ou capacitores bypass se eles não desempenharem um papel significativo na segurança do módulo criptográfico e não estiverem na fronteira criptográfica;
+            \item Componentes de fornecimento de energia, incluindo alimentação (power supply), módulos de conversão de voltagem (por exemplo: módulos AC-DC ou DC-DC), transformadores, conectores de entrada de energia e conectores de saída de energia;
+            \item Placa de circuito impresso ou outras superfícies de montagem de componentes;
+            \item Encapsulamentos/revestimentos, incluindo quaisquer portas de acesso removíveis ou coberturas/camadas;
+            \item Conectores físicos para dispositivos externos ao módulo criptográfico, ou entre quaisquer submódulos independentes do módulo principal;
+            \item Módulos de software/firmware que são modificáveis;
+            \item Módulos de software/firmware que não são modificáveis;
+            \item Outros tipos de componentes que não estão listados acima.
+        \end{itemize}
+        \item \textbf{EN.III.1.1.02:} Verificar se a documentação especifica a fronteira criptográfica. A fronteira criptográfica deve incluir qualquer hardware ou software que insere, recebe, processa ou emite parâmetros de segurança importantes que poderiam conduzir ao comprometimento de informações sensíveis se não controlados adequadamente.
+        \item \textbf{EN.III.1.1.03:} Verificar se todos os componentes de hardware, software e firmware dentro da fronteira criptográfica estão incluídos na “lista de componentes principais”, e se há componentes fora da fronteira criptográfica que não estão listados como componentes do módulo criptográfico.
+        \item \textbf{EN.III.1.1.04:} Verificar se a documentação mostra explicitamente e precisamente onde o perímetro físico da fronteira criptográfica está situado, incluindo detalhes sobre os seus componentes. Além disso, analisar se a documentação contém uma lista das portas conectadas aos equipamentos externos, todos os fluxos de informação significativa e processamentos a serem desempenhados dentro da fronteira criptográfica, além de toda informação recebida e emitida.
+        \item \textbf{EN.III.1.1.05:} Verificar se a fronteira criptográfica é fisicamente contínua, de tal forma que não haja lacunas que possam permitir entrada, saída ou outro tipo de acesso não controlado ao módulo criptográfico. O projeto do módulo criptográfico deve também assegurar que não tenham interfaces não controladas para o interior ou para fora do módulo criptográfico que possam passar PCSs (Parâmetros Críticos de Segurança), dados em texto legível, ou outras informações que, se mal utilizadas ou utilizadas de forma inadequada, possam conduzir a um comprometimento da segurança.
+        \item \textbf{EN.III.1.1.06:} Verificar se todos os componentes que estão identificados no diagrama de blocos pertencem à fronteira criptográfica.
+        \item \textbf{EN.III.1.1.07:} Verificar se a documentação descreve os componentes de software/firmware executados pelo módulo criptográfico, bem como seus serviços desempenhados e os dispositivos de memória que armazenam dados e o código executável.
+        \item \textbf{EN.III.1.1.08:}  Analisar a documentação e identificar os componentes de hardware internos ou externos ao módulo criptográfico que interagem com o processador listado na “lista de componentes principais”
+    \end{itemize}
+
+    \vspace{1cm} 
+    
+    \subsubsection*{EN.III.1.1.01 - Parecer:}
+    
+    \vspace{1cm} 
+    
+    \subsubsection*{EN.III.1.1.02 - Parecer:}
+    
+    \vspace{1cm} 
+    
+    \subsubsection*{EN.III.1.1.03 - Parecer:}
+    
+    \vspace{1cm} 
+    
+    \subsubsection*{EN.III.1.1.04 - Parecer:}
+    
+    \vspace{1cm} 
+    
+    \subsubsection*{EN.III.1.1.05 - Parecer:}
+    
+    \vspace{1cm} 
+    
+    \subsubsection*{EN.III.1.1.06 - Parecer:}
+
+    \vspace{1cm} 
+    
+    \subsubsection*{EN.III.1.1.07 - Parecer:}
+        
+    \vspace{1cm} 
+    
+    \subsubsection*{EN.III.1.1.08 - Parecer:}
+    
+    \vspace{1cm} 
+    \newpage
+
+
