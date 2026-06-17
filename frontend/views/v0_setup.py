@@ -80,11 +80,13 @@ def render_setup():
                     # Executa script real
                     run_pre_study(temp_path, project_dir)
                     
-                    # Carrega as pastas pro estado visual
-                    req_dir = os.path.join(project_dir, "requisitos")
-                    if os.path.exists(req_dir):
-                        reqs = [d for d in os.listdir(req_dir) if os.path.isdir(os.path.join(req_dir, d))]
-                        st.session_state.requisitos = [{"id": r, "status": "Pendente", "evidencias": []} for r in reqs]
+                    # Carrega as pastas pro estado visual lendo o json
+                    req_json_path = os.path.join(project_dir, "requisitos", "requisitos.json")
+                    if os.path.exists(req_json_path):
+                        with open(req_json_path, 'r', encoding='utf-8') as f:
+                            st.session_state.requisitos = json.load(f)
+                    else:
+                        st.session_state.requisitos = []
                     
                     st.session_state.logs.append("[Pre-Study] Árvore de requisitos criada com sucesso.")
                     os.remove(temp_path)

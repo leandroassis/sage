@@ -14,7 +14,7 @@ def describe_image_base64(image_base64: str) -> str:
         return "[Descrição Visual: Imagem muito pequena/ignorada]"
     
     prompt = (
-        "Descreva detalhadamente o que está nesta imagem. "
+        "Descreva EM PORTUGUES DO BRASIL detalhadamente o que está nesta imagem. "
         "Se for uma interface gráfica, terminal ou console, transcreva os comandos e logs visíveis. "
         "Seja direto e foque nas evidências técnicas."
     )

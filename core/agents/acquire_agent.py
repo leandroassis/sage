@@ -15,43 +15,33 @@ from core.config import DATA_DIR, get_logger
 logger = get_logger("AcquireAgent")
 
 SYSTEM_PROMPT = """Você é um Agente Planejador Lógico especializado em auditoria técnica e análise de código fonte e documentação (Padrões ICP-Brasil e INMETRO).
-Seu objetivo é analisar o texto fonte de um requisito normativo em LaTeX, identificar os ensaios solicitados (geralmente sob a tag \\item \\textbf{EN...}) e elaborar uma resposta detalhada com base no contexto fornecido.
+Seu objetivo é analisar o texto fonte de um ensaio normativo em LaTeX e elaborar uma resposta detalhada com base no contexto fornecido.
 
-INSTRUÇÕES DE OPERAÇÃO:
+<instrucoes_operacao>
 1. DETERMINAÇÃO DE STATUS:
-   - Baseado nos pareceres anteriores do mesmo ensaio/requisito (encontrados no contexto histórico), determine primeiramente se o ensaio pode ser completamente satisfeito apenas com uma explicação textual (Status: "Autônomo") ou se necessita de evidências adicionais visuais, como tabelas e imagens (Status: "Ação Pendente").
-   - Caso você não consiga identificar algum trecho necessário na documentação atual para sustentar a resposta, mude o status de "Autônomo" para "Ação Pendente".
+   - Baseado no histórico deste mesmo ensaio (se houver), determine se ele pode ser satisfeito apenas com a síntese textual que você vai escrever (Status: "Autônomo") ou se necessita de evidências adicionais anexadas pelo usuário, como tabelas, prints e fotos (Status: "Ação Pendente").
+   - Se o projeto atual não tiver informações suficientes para satisfazer o requisito, marque o status como "Ação Pendente".
 
 2. ELABORAÇÃO DA RESPOSTA (synthesis):
-   - Após determinar o status, concentre-se em elaborar uma resposta para o ensaio utilizando a documentação adicional (específica do processo/projeto atual).
-   - A resposta elaborada deve seguir rigorosamente o padrão de formatação e redação utilizado nos pareceres anteriores presentes nos relatórios históricos.
-   - Por padrão, suas respostas devem referenciar as documentações, anexos e ferramentas que comprovem a sua linha argumentativa.
-   - As respostas (synthesis) devem ser sempre completas, objetivas e claras.
-   - A síntese (synthesis) do modelo DEVE ser apresentada independentemente do status ser "Autônomo" ou "Ação Pendente".
+   - A sua resposta elaborada deve seguir rigorosamente o padrão de redação dos pareceres históricos.
+   - Referencie o contexto do projeto atual (manual, código, etc) para embasar a aprovação ou reprovação do ensaio.
+   - Sempre forneça a síntese detalhada.
 
 3. INSTRUÇÕES AO USUÁRIO (instruction):
-   - O campo "instruction" deve conter instruções construtivas.
-   - Deixe claro quais são as suas dúvidas e quais informações estão faltando, para que o usuário possa dar mais contexto e apontar (através de upload ou prompt adicional) quais itens da documentação podem ser usados para gerar a resposta.
+   - Se houver lacunas, descreva construtivamente o que o usuário deve fornecer (ex: enviar foto da placa, apontar trecho do manual).
+</instrucoes_operacao>
 
-Sua saída DEVE ser ESTRITAMENTE em formato JSON válido para não quebrar o pipeline, com a seguinte estrutura:
+Sua saída DEVE ser ESTRITAMENTE em formato JSON, retornando APENAS o JSON válido. Exemplo:
 {
-  "status": "Autônomo" ou "Ação Pendente",
-  "instruction": "Instruções construtivas e claras sobre as dúvidas do modelo e o que o usuário deve fornecer (ex: fotos, tabelas, apontamento de documentação).",
-  "ensaios": [
-    {
-      "id": "EN.III.1.1.01",
-      "synthesis": "Sua resposta completa, objetiva e referenciada, seguindo o padrão histórico, apresentada tanto para Autônomo quanto para Ação Pendente."
-    }
-  ]
+  "status": "Autônomo",
+  "instruction": "Nenhuma evidência externa necessária, a documentação atende ao requisito.",
+  "synthesis": "O equipamento analisado apresenta na documentação a especificação de que..."
 }
 
-Regras adicionais:
-- O usuário pode fornecer instruções adicionais (prompt iterativo) para corrigir ou forçar um raciocínio.
-- Retorne APENAS o JSON válido.
-- Responda em Português do Brasil.
+Retorne em Português do Brasil e apenas o JSON.
 """
 
-def run_acquire_agent(session_id: str, target_req_id: str = None):
+def run_acquire_agent(session_id: str, target_req_id: str = None, target_ensaio_id: str = None):
     logger.info(f"Iniciando Acquire Agent para sessão {session_id}...")
     
     state = get_session_state(session_id, "v2_acquire") or {}
@@ -97,60 +87,67 @@ def run_acquire_agent(session_id: str, target_req_id: str = None):
     )
     
     llm = ChatOllama(
-        model="qwen2.5-coder:7b",
+        model="llama3:latest",
         format="json",
         temperature=0.0
     )
     
-    reqs_to_process = [r for r in requisitos if r['id'] == target_req_id] if target_req_id else requisitos
-    total = len(reqs_to_process)
+    # Montar a lista flat de tarefas (ensaios)
+    tasks = []
+    for req in requisitos:
+        if target_req_id and req['id'] != target_req_id:
+            continue
+        for ensaio in req.get('ensaios', []):
+            if target_ensaio_id and ensaio['id'] != target_ensaio_id:
+                continue
+            # Pula os que já estão finalizados ou em andamento, exceto se for target
+            if not target_req_id and ensaio.get('status') in ["Autônomo", "Ação Pendente", "Pronto"] and ensaio.get('synthesis'):
+                continue
+            tasks.append((req, ensaio))
+            
+    total = len(tasks)
     start_time = time.time()
     
-    for i, req in enumerate(reqs_to_process):
-        if not target_req_id and req.get('ensaios') and req.get('status') in ["Autônomo", "Ação Pendente", "Pronto"]:
-            continue
-            
-        add_log(f"Analisando requisito {req['id']}...")
+    for i, (req, ensaio) in enumerate(tasks):
+        add_log(f"Analisando ensaio {ensaio['id']} do requisito {req['id']}...")
         
         req_id = req['id']
-        tex_filename = f"REQUISITO_{req_id.replace('REQ_', '')}.tex"
+        ensaio_safe = ensaio['id'].replace('.', '_').replace(':', '')
+        tex_filename = f"{ensaio_safe}.tex"
         tex_path = os.path.join(DATA_DIR, "projects", session_id, "requisitos", req_id, tex_filename)
         
-        req_text = ""
+        ensaio_text = ""
         if os.path.exists(tex_path):
             with open(tex_path, "r", encoding="utf-8") as f:
-                raw_text = f.read()
-                
-            import re
-            # Extrair apenas o enunciado e os ensaios, descartando a seção de Pareceres
-            cutoff_match = re.search(r'\\(?:sub)*section\*?\{EN\.[^}]+\s*-\s*Parecer:\}', raw_text)
-            if cutoff_match:
-                req_text = raw_text[:cutoff_match.start()].strip()
-            else:
-                req_text = raw_text.strip()
+                ensaio_text = f.read().strip()
         else:
-            add_log(f"Aviso: Arquivo {tex_path} não encontrado. Usando texto vazio.")
+            add_log(f"Aviso: Arquivo {tex_path} não encontrado.")
             
-        query_text = req_text[:6000] # Limita o tamanho para não estourar o contexto do modelo de embedding (nomic-embed-text)
+        query_text = ensaio_text[:6000]
         
         docs_proj = vectorstore_proj.similarity_search(query_text, k=10)
         context_proj = "\n\n".join([f"[Fonte: {d.metadata.get('source', 'Desconhecida')}]\n{d.page_content}" for d in docs_proj])
         
-        docs_hist = vectorstore_hist.similarity_search(query_text, k=5)
+        # Filtra histórico por ensaio_id
+        filter_dict = {"ensaio_id": ensaio['id']}
+        docs_hist = vectorstore_hist.similarity_search(query_text, k=5, filter=filter_dict)
+        # Se não achar nada com o filtro, tenta sem o filtro
+        if not docs_hist:
+            docs_hist = vectorstore_hist.similarity_search(query_text, k=3)
+            
         context_hist = "\n\n".join([f"[Histórico: {d.metadata.get('source', 'Desconhecida')}]\n{d.page_content}" for d in docs_hist])
         
         add_log(f"Contexto recuperado: {len(docs_proj)} chunks do projeto, {len(docs_hist)} chunks históricos")
         
-        user_prompt = req.get('user_prompt', '')
+        user_prompt = ensaio.get('user_prompt', '')
         
-        human_msg = f"CONTEÚDO DO REQUISITO (.tex):\n{req_text}\n\nCONTEXTO DO PROJETO ATUAL:\n{context_proj}\n\nCONTEXTO HISTÓRICO:\n{context_hist}\n"
+        human_msg = f"<ensaio_especifico>\n{ensaio_text}\n</ensaio_especifico>\n\n<contexto_projeto_atual>\n{context_proj}\n</contexto_projeto_atual>\n\n<contexto_historico>\n{context_hist}\n</contexto_historico>\n"
         if user_prompt:
-            human_msg += f"\nINSTRUÇÃO ADICIONAL DO USUÁRIO:\n{user_prompt}\n(Use esta instrução para corrigir seu raciocínio e gerar uma nova resposta)"
+            human_msg += f"\n<instrucao_adicional_usuario>\n{user_prompt}\n(Use esta instrução para corrigir seu raciocínio e gerar a síntese de forma alinhada com o usuário)\n</instrucao_adicional_usuario>"
+            
+        add_log(f"Consultando LLM Planejador ({llm.model}) para {ensaio['id']}...")
         
-        add_log(f"Consultando LLM Planejador para o {req['id']}...")
-        
-        # Log do trace para o Worker (avaliação do modelo)
-        logger.info(f"=== TRACE LLM para {req['id']} ===")
+        logger.info(f"=== TRACE LLM para {ensaio['id']} ===")
         logger.info(f"System:\n{SYSTEM_PROMPT}")
         logger.info(f"Human:\n{human_msg}")
         logger.info(f"====================================")
@@ -161,25 +158,23 @@ def run_acquire_agent(session_id: str, target_req_id: str = None):
                 HumanMessage(content=human_msg)
             ])
             
-            logger.info(f"=== RESPOSTA LLM {req['id']} ===")
+            logger.info(f"=== RESPOSTA LLM {ensaio['id']} ===")
             logger.info(response.content)
             logger.info(f"====================================")
             
             result = json.loads(response.content)
             
-            req['status'] = result.get('status', 'Ação Pendente')
-            req['instruction'] = result.get('instruction', 'Nenhuma instrução gerada.')
-            req['ensaios'] = result.get('ensaios', [])
-            req['synthesis'] = "Consulte os ensaios individuais."
+            ensaio['status'] = result.get('status', 'Ação Pendente')
+            ensaio['instruction'] = result.get('instruction', 'Nenhuma instrução gerada.')
+            ensaio['synthesis'] = result.get('synthesis', 'Erro ao obter síntese.')
             
-            add_log(f"-> Status: {req['status']} | Ensaios: {len(req['ensaios'])}")
+            add_log(f"-> Status: {ensaio['status']}")
             
         except Exception as e:
-            add_log(f"Erro ao processar {req['id']} via LLM: {str(e)}")
-            req['status'] = 'Ação Pendente'
-            req['instruction'] = 'Falha no processamento LLM. Trate manualmente.'
-            req['ensaios'] = []
-            req['synthesis'] = 'Erro no agente.'
+            add_log(f"Erro ao processar {ensaio['id']} via LLM: {str(e)}")
+            ensaio['status'] = 'Ação Pendente'
+            ensaio['instruction'] = 'Falha no processamento LLM. Trate manualmente.'
+            ensaio['synthesis'] = 'Erro no agente.'
         
         if not target_req_id:
             elapsed = time.time() - start_time

@@ -173,10 +173,9 @@ def run_project_pipeline(project_id: str, db_dir: str):
                 
             log(f"[Project Pipeline] PDF {file} fatiado em {len(final_splits)} blocos e processado.")
         else:
-            log(f"[Project Pipeline] Extraindo AST de código fonte: {file}")
-            chunks = extract_ast_chunks(file_path)
-            for c in chunks:
-                documents_to_insert.append(Document(page_content=c["content"], metadata=c["metadata"]))
+            log(f"[Project Pipeline] Enfileirando análise de AST para o arquivo: {file}")
+            from core.database import enqueue_job
+            enqueue_job(project_id, f"AST_TRANSLATE:{file_path}")
                     
     if documents_to_insert:
         log(f"[Project Pipeline] Inserindo {len(documents_to_insert)} chunks no VectorDB...")

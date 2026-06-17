@@ -139,6 +139,14 @@ def run_historical_pipeline(reports_dir: str, db_dir: str, add_log_callback=None
                 source_parts.append(f"Seção: {section_str}")
             doc.metadata["source"] = f"{source_parts[0]} ({', '.join(source_parts[1:])})" if len(source_parts) > 1 else pdf_file
             
+            # Extract ensaio_id
+            ensaio_match = re.search(r'(EN\.[A-Z0-9\.]+)', doc.page_content)
+            if not ensaio_match and section_str:
+                ensaio_match = re.search(r'(EN\.[A-Z0-9\.]+)', section_str)
+            if ensaio_match:
+                # remove dot at the end if caught by regex accidentally
+                doc.metadata["ensaio_id"] = ensaio_match.group(1).rstrip('.')
+            
             # Limpar marcadores de página do conteúdo final
             doc.page_content = re.sub(r'\n?<!-- PAGE \d+ -->\n?', '\n', doc.page_content).strip()
             

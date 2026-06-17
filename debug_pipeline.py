@@ -88,12 +88,38 @@ def main():
     tex_filename = f"REQUISITO_{req_id.replace('REQ_', '')}.tex"
     shutil.copy(args.req_tex, os.path.join(req_dir, tex_filename))
     
+    # Extrair os ensaios do test.tex para simular o pre_study
+    ensaios_list = []
+    with open(args.req_tex, "r", encoding="utf-8") as f:
+        tex_content = f.read()
+    
+    import re
+    # Encontra todos os \item \textbf{EN...
+    en_pattern = re.compile(r'\\item\s+\\textbf\{(EN\.[^:}]+)(.*?)(?=\\item\s+\\textbf\{EN|\\end\{itemize\}|\\end\{document\}|$)', re.DOTALL)
+    ensaios_matches = en_pattern.finditer(tex_content)
+    
+    for match in ensaios_matches:
+        en_id = match.group(1).strip()
+        ensaio_safe = en_id.replace('.', '_').replace(':', '')
+        bloco_completo = match.group(0).strip()
+        
+        # Salva o bloco inteiro no tex do ensaio
+        with open(os.path.join(req_dir, f"{ensaio_safe}.tex"), "w", encoding="utf-8") as fe:
+            fe.write(bloco_completo)
+        
+        ensaios_list.append({
+            "id": en_id,
+            "status": "Ação Pendente",
+            "instruction": "",
+            "synthesis": ""
+        })
+    
     state = get_session_state(session_id, "v1_study") or {}
     state["requisitos"] = [
         {
             "id": req_id,
             "status": "Ação Pendente",
-            "ensaios": []
+            "ensaios": ensaios_list
         }
     ]
     update_session_state(session_id, "v1_study", state)
