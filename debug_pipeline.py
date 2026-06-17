@@ -57,6 +57,12 @@ def main():
     os.makedirs(proj_doc_dir, exist_ok=True)
     shutil.copy(args.doc_pdf, os.path.join(proj_doc_dir, os.path.basename(args.doc_pdf)))
     
+    # Copiar também código-fonte de teste, se houver
+    test_code_path = os.path.join("tests", "code.c")
+    if os.path.exists(test_code_path):
+        shutil.copy(test_code_path, os.path.join(proj_doc_dir, "code.c"))
+        logger.info("[Debug] Arquivo de código code.c adicionado à documentação.")
+    
     # Cria estado de sessão vazio pra nao quebrar
     create_session(session_id, "Sessão de Debug")
     state = {}

@@ -18,5 +18,5 @@ worker:
 
 [no-cd]
 clean:
-    pkill -f "worker.py"
     rm -rf data tests/test.log tests/fragments/*
+    pkill -f "worker.py"
