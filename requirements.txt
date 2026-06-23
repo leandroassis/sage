@@ -7,5 +7,5 @@ docling
 tree-sitter<0.22.0
 tree-sitter-languages
 langchain
-1langchain-ollama
+langchain-ollama
 honcho
